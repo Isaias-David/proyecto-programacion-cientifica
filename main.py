@@ -1,4 +1,4 @@
 def sumar (a, b):
-    return a + b
-
-print(sumar(3, 5))
+    def suma(a, b):
+        return a + b
+    return suma(a, b)
