@@ -33,3 +33,15 @@ Analizar los datos desde el 2023 hasta el 2025
 En el rango de 15 años en adelante es donde mas se consulta disminuyento un porcentaje llegando a las 65 años .
 
 3. **Cuales son los departamentos que mas atiende el Hospital General:** Aunque Antioquia representa el principal origen de pacientes, tambien se registra pacientes provenientes de Chocó y Córdoba.
+
+
+
+###### #############################################################
+
+## TAREA_2 ###
+
+###### #############################################################
+Adjunto los datos y enlaces para acceder a google colab
+* **URL(https://colab.research.google.com/drive/1ZRkNhLsMXzZyljnZz8j4PAeqCa-ygkXp?usp=sharing)
+* **Bases de datos:Se utiliza la misma bases de datos que en los ejercicios de VS code y GitHUB (poblacion_atendida_limpia.csv)
+* **Problema:** Predicción de la probabilidad de hospitalización de un paciente al momento del ingreso.
