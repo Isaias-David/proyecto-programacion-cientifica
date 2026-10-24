@@ -1,6 +1,6 @@
 ## 860. asignar_galletas
 * https://leetcode.com/problems/assign-cookies/
-* Criterio greedy: Se ordenana las galletas de tal manera que se igualen y satisfaga la codicio de los niños
+* Criterio greedy: Se ordenana las galletas de tal manera que se igualen y cumpla las espectativas de los niños
 * [Aceptada — Asignar galletas](evidencias/asignar_galletas_aceptada.jpeg) 
 
 ## 455. Lemonade Change
