@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Problema 4.2: La Avenida Larga — BFS vs Dijkstra</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #1e293b;
+      --panel-light: #334155;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --bfs-color: #f59e0b;
+      --dijkstra-color: #10b981;
+      --danger: #f43f5e;
+      --border: #475569;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    header {
+      background-color: var(--panel);
+      padding: 14px 28px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    header h1 {
+      font-size: 1.2rem;
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    header span {
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 20px;
+      padding: 20px 28px;
+      overflow-y: auto;
+    }
+
+    .card {
+      background-color: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .graph-container {
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .graph-header {
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .legend {
+      display: flex;
+      gap: 14px;
+      font-size: 0.82rem;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    svg {
+      width: 100%;
+      max-height: 430px;
+      background-color: #0b1120;
+      border-radius: 10px;
+      border: 1px solid var(--panel-light);
+    }
+
+    .edge {
+      stroke: #475569;
+      stroke-width: 3;
+      transition: all 0.3s ease;
+    }
+
+    .edge.avenida {
+      stroke-dasharray: 7 4;
+    }
+
+    .edge.bfs-active {
+      stroke: var(--bfs-color);
+      stroke-width: 6;
+    }
+
+    .edge.dijkstra-active {
+      stroke: var(--dijkstra-color);
+      stroke-width: 6;
+    }
+
+    .weight-bg {
+      fill: #0f172a;
+      stroke: #334155;
+      stroke-width: 1;
+    }
+
+    .weight-text {
+      fill: #e2e8f0;
+      font-size: 12px;
+      font-weight: 600;
+      text-anchor: middle;
+      dominant-baseline: central;
+    }
+
+    .weight-text.avenida-label {
+      fill: #fda4af;
+      font-weight: 700;
+    }
+
+    .node circle {
+      fill: #1e293b;
+      stroke: #94a3b8;
+      stroke-width: 3;
+      transition: all 0.3s ease;
+    }
+
+    .node.visited circle {
+      fill: #1d4ed8;
+      stroke: var(--accent);
+    }
+
+    .node.current circle {
+      fill: var(--bfs-color);
+      stroke: #fff;
+      stroke-width: 4;
+    }
+
+    .node.dijkstra-win circle {
+      fill: var(--dijkstra-color);
+      stroke: #fff;
+    }
+
+    .node.start circle {
+      stroke: #38bdf8;
+      stroke-width: 4;
+    }
+
+    .node.end circle {
+      stroke: #f43f5e;
+      stroke-width: 4;
+    }
+
+    .node text {
+      fill: #f8fafc;
+      font-size: 13px;
+      font-weight: 700;
+      text-anchor: middle;
+      pointer-events: none;
+    }
+
+    .node .sub-label {
+      fill: #94a3b8;
+      font-size: 10px;
+      font-weight: 500;
+    }
+
+    .slide-panel {
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+      background-color: rgba(56, 189, 248, 0.15);
+      color: var(--accent);
+    }
+
+    .badge.bfs {
+      background-color: rgba(245, 158, 11, 0.2);
+      color: var(--bfs-color);
+    }
+
+    .badge.dijkstra {
+      background-color: rgba(16, 185, 129, 0.2);
+      color: var(--dijkstra-color);
+    }
+
+    .slide-title {
+      font-size: 1.35rem;
+      margin-bottom: 12px;
+      line-height: 1.3;
+    }
+
+    .slide-body {
+      font-size: 0.96rem;
+      line-height: 1.6;
+      color: #cbd5e1;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .slide-body p {
+      margin-bottom: 12px;
+    }
+
+    .adj-table, .dist-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 8px;
+      font-size: 0.88rem;
+    }
+
+    .adj-table th, .adj-table td,
+    .dist-table th, .dist-table td {
+      border: 1px solid var(--border);
+      padding: 7px 10px;
+      text-align: left;
+    }
+
+    .adj-table th, .dist-table th {
+      background-color: var(--panel-light);
+      color: var(--accent);
+    }
+
+    .state-box {
+      background-color: #0f172a;
+      border-left: 4px solid var(--accent);
+      padding: 12px 14px;
+      border-radius: 6px;
+      margin-top: 12px;
+      font-family: 'Consolas', monospace;
+      font-size: 0.9rem;
+    }
+
+    .state-box.bfs { border-left-color: var(--bfs-color); }
+    .state-box.dijkstra { border-left-color: var(--dijkstra-color); }
+
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .result-card {
+      background-color: #0f172a;
+      padding: 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .result-card.bfs { border-top: 4px solid var(--bfs-color); }
+    .result-card.dijkstra { border-top: 4px solid var(--dijkstra-color); }
+
+    footer {
+      background-color: var(--panel);
+      padding: 12px 28px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    button {
+      background-color: var(--panel-light);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+      transition: background 0.2s;
+    }
+
+    button:hover:not(:disabled) {
+      background-color: var(--accent);
+      color: #0f172a;
+    }
+
+    button:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    button.play-btn {
+      background-color: var(--accent);
+      color: #0f172a;
+      min-width: 125px;
+    }
+
+    .progress-wrapper {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    input[type="range"] {
+      flex: 1;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    .step-counter {
+      font-size: 0.9rem;
+      font-weight: 600;
+      min-width: 95px;
+      text-align: right;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Problema 4.2: La Avenida Larga (Barrio Niquía — Bello)</h1>
+  <span>Estructuras de Datos y Grafos • BFS vs. Dijkstra</span>
+</header>
+
+<main>
+  <!-- Panel Izquierdo: Grafo Interactivo SVG -->
+  <section class="card graph-container">
+    <div class="graph-header">
+      <strong>Mapa Vial del Barrio (7 Vértices)</strong>
+      <div class="legend">
+        <div class="legend-item"><span class="dot" style="background:#38bdf8"></span>Inicio</div>
+        <div class="legend-item"><span class="dot" style="background:#f43f5e"></span>Destino</div>
+        <div class="legend-item"><span class="dot" style="background:#f59e0b"></span>Ruta BFS</div>
+        <div class="legend-item"><span class="dot" style="background:#10b981"></span>Ruta Dijkstra</div>
+      </div>
+    </div>
+
+    <svg viewBox="0 0 640 420" id="graph-svg">
+      <!-- Aristas (Conexiones) -->
+      <!-- La Avenida Larga: Parque - Estación (950 m) -->
+      <line id="edge-Parque-Estacion" class="edge avenida" x1="110" y1="210" x2="530" y2="210" />
+      
+      <!-- Camino Norte: Parque - Iglesia - Colegio - Hospital - Estación -->
+      <line id="edge-Parque-Iglesia" class="edge" x1="110" y1="210" x2="210" y2="85" />
+      <line id="edge-Iglesia-Colegio" class="edge" x1="210" y1="85" x2="330" y2="65" />
+      <line id="edge-Colegio-Hospital" class="edge" x1="330" y1="65" x2="445" y2="95" />
+      <line id="edge-Hospital-Estacion" class="edge" x1="445" y1="95" x2="530" y2="210" />
+
+      <!-- Camino Sur: Parque - Mercado - Cancha - Estación -->
+      <line id="edge-Parque-Mercado" class="edge" x1="110" y1="210" x2="230" y2="335" />
+      <line id="edge-Mercado-Cancha" class="edge" x1="230" y1="335" x2="410" y2="335" />
+      <line id="edge-Cancha-Estacion" class="edge" x1="410" y1="335" x2="530" y2="210" />
+
+      <!-- Etiquetas de Pesos en Metros -->
+      <g>
+        <rect class="weight-bg" x="255" y="196" width="130" height="26" rx="6" />
+        <text class="weight-text avenida-label" x="320" y="209">Avenida Larga: 950 m</text>
+      </g>
+      <g>
+        <rect class="weight-bg" x="132" y="132" width="52" height="22" rx="4" />
+        <text class="weight-text" x="158" y="143">180 m</text>
+      </g>
+      <g>
+        <rect class="weight-bg" x="245" y="60" width="52" height="22" rx="4" />
+        <text class="weight-text" x="271" y="71">160 m</text>
+      </g>
+      <g>
+        <rect class="weight-bg" x="364" y="66" width="52" height="22" rx="4" />
+        <text class="weight-text" x="390" y="77">150 m</text>
+      </g>
+      <g>
+        <rect class="weight-bg" x="466" y="138" width="52" height="22" rx="4" />
+        <text class="weight-text" x="492" y="149">170 m</text>
+      </g>
+      <g>
+        <rect class="weight-bg" x="140" y="262" width="52" height="22" rx="4" />
+        <text class="weight-text" x="166" y="273">220 m</text>
+      </g>
+      <g>
+        <rect class="weight-bg" x="294" y="324" width="52" height="22" rx="4" />
+        <text class="weight-text" x="320" y="335">280 m</text>
+      </g>
+      <g>
+        <rect class="weight-bg" x="450" y="262" width="52" height="22" rx="4" />
+        <text class="weight-text" x="476" y="273">260 m</text>
+      </g>
+
+      <!-- Vértices (Nodos) -->
+      <g id="node-Parque" class="node start" transform="translate(110, 210)">
+        <circle r="30" />
+        <text y="-2">Parque</text>
+        <text class="sub-label" y="12">(Inicio)</text>
+      </g>
+
+      <g id="node-Iglesia" class="node" transform="translate(210, 85)">
+        <circle r="27" />
+        <text y="4">Iglesia</text>
+      </g>
+
+      <g id="node-Colegio" class="node" transform="translate(330, 65)">
+        <circle r="27" />
+        <text y="4">Colegio</text>
+      </g>
+
+      <g id="node-Hospital" class="node" transform="translate(445, 95)">
+        <circle r="27" />
+        <text y="4">Hospital</text>
+      </g>
+
+      <g id="node-Estacion" class="node end" transform="translate(530, 210)">
+        <circle r="30" />
+        <text y="-2">Estación</text>
+        <text class="sub-label" y="12">(Destino)</text>
+      </g>
+
+      <g id="node-Mercado" class="node" transform="translate(230, 335)">
+        <circle r="27" />
+        <text y="4">Mercado</text>
+      </g>
+
+      <g id="node-Cancha" class="node" transform="translate(410, 335)">
+        <circle r="27" />
+        <text y="4">Cancha</text>
+      </g>
+    </svg>
+
+    <div style="font-size: 0.84rem; color: var(--muted); text-align: center; margin-top: 8px;">
+      Nota: El largo visual de las líneas no representa la escala real; el peso exacto en metros es el número escrito sobre cada arista.
+    </div>
+  </section>
+
+  <!-- Panel Derecho: Diapositiva y Estado del Algoritmo -->
+  <section class="card slide-panel">
+    <div>
+      <span id="slide-badge" class="badge">Introducción</span>
+      <h2 id="slide-title" class="slide-title">Título de la diapositiva</h2>
+    </div>
+
+    <div id="slide-body" class="slide-body">
+      <!-- Contenido dinámico -->
+    </div>
+  </section>
+</main>
+
+<footer>
+  <button id="btn-prev" onclick="prevSlide()">← Anterior</button>
+  <button id="btn-play" class="play-btn" onclick="togglePlay()">▶ Reproducir</button>
+  <button id="btn-next" onclick="nextSlide()">Siguiente →</button>
+
+  <div class="progress-wrapper">
+    <input type="range" id="slide-slider" min="0" value="0" oninput="goToSlide(Number(this.value))">
+    <span id="step-counter" class="step-counter">1 / 10</span>
+  </div>
+</footer>
+
+<script>
+  const slides = [
+    {
+      badge: "Planteamiento del Problema 4.2",
+      badgeClass: "",
+      title: "La Avenida Larga: ¿Menos calles o menos metros?",
+      body: `
+        <p><strong>Contexto:</strong> Un peatón parte desde el <strong>Parque</strong> del barrio Niquía (Bello) y desea llegar hasta la <strong>Estación</strong> del metro.</p>
+        <p>Existe una vía principal directa llamada <strong>La Avenida Larga</strong> que conecta ambos puntos en <strong>1 solo tramo</strong>, pero mide <strong>950 metros</strong>. Por otro lado, existen calles internas más cortas que conectan los equipamientos del barrio.</p>
+        <p><strong>Preguntas a resolver:</strong></p>
+        <ul style="margin-left: 20px; margin-bottom: 12px;">
+          <li>¿Qué ruta usa <strong>menos calles</strong> (aristas)? → Resuelto con <strong>BFS</strong>.</li>
+          <li>¿Qué ruta suma <strong>menos metros</strong> (peso total)? → Resuelto con <strong>Dijkstra</strong>.</li>
+        </ul>
+      `,
+      visited: [],
+      current: [],
+      dijkstraWin: [],
+      bfsEdges: [],
+      dijkstraEdges: ["Parque-Estacion"]
+    },
+    {
+      badge: "Estructura del Grafo",
+      badgeClass: "",
+      title: "Lista de Adyacencia y Pesos (7 Vértices)",
+      body: `
+        <p>El grafo es no dirigido y ponderado con distancias positivas en metros:</p>
+        <table class="adj-table">
+          <thead>
+            <tr>
+              <th>Vértice</th>
+              <th>Vecinos y Peso de Arista (metros)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><strong>Parque</strong></td><td>Estación (950 m), Iglesia (180 m), Mercado (220 m)</td></tr>
+            <tr><td><strong>Iglesia</strong></td><td>Parque (180 m), Colegio (160 m)</td></tr>
+            <tr><td><strong>Colegio</strong></td><td>Iglesia (160 m), Hospital (150 m)</td></tr>
+            <tr><td><strong>Hospital</strong></td><td>Colegio (150 m), Estación (170 m)</td></tr>
+            <tr><td><strong>Mercado</strong></td><td>Parque (220 m), Cancha (280 m)</td></tr>
+            <tr><td><strong>Cancha</strong></td><td>Mercado (280 m), Estación (260 m)</td></tr>
+            <tr><td><strong>Estación</strong></td><td>Parque (950 m), Hospital (170 m), Cancha (260 m)</td></tr>
+          </tbody>
+        </table>
+      `,
+      visited: [],
+      current: [],
+      dijkstraWin: [],
+      bfsEdges: [],
+      dijkstraEdges: []
+    },
+    {
+      badge: "Algoritmo 1: BFS (Menos Calles)",
+      badgeClass: "bfs",
+      title: "BFS — Paso 1: Inicio en el Parque (Nivel 0)",
+      body: `
+        <p><strong>Búsqueda en Anchura (BFS)</strong> explora el grafo por niveles de profundidad (número de calles), ignorando los metros de cada tramo.</p>
+        <p>Insertamos el vértice origen <strong>Parque</strong> en la cola FIFO y lo marcamos como visitado.</p>
+        <div class="state-box bfs">
+          <strong>Cola (FIFO):</strong> [ Parque ]<br>
+          <strong>Visitados:</strong> { Parque }<br>
+          <strong>Calles recorridas hasta aquí:</strong> 0
+        </div>
+      `,
+      visited: ["Parque"],
+      current: ["Parque"],
+      dijkstraWin: [],
+      bfsEdges: [],
+      dijkstraEdges: []
+    },
+    {
+      badge: "Algoritmo 1: BFS (Menos Calles)",
+      badgeClass: "bfs",
+      title: "BFS — Paso 2: Expansión de vecinos directos (Nivel 1)",
+      body: `
+        <p>Sacamos <strong>Parque</strong> de la cola y revisamos todos sus vecinos directos (a 1 calle de distancia): <strong>Estación</strong>, <strong>Iglesia</strong> y <strong>Mercado</strong>.</p>
+        <p>¡Al encolar <strong>Estación</strong> a través de <em>La Avenida Larga</em>, BFS encuentra el destino en el primer nivel!</p>
+        <div class="state-box bfs">
+          <strong>Cola (FIFO):</strong> [ Estación, Iglesia, Mercado ]<br>
+          <strong>Padre de Estación:</strong> Parque (1 calle)<br>
+          <strong>Resultado BFS:</strong> Ruta encontrada con 1 sola arista (950 m).
+        </div>
+      `,
+      visited: ["Parque", "Estación", "Iglesia", "Mercado"],
+      current: ["Estación"],
+      dijkstraWin: [],
+      bfsEdges: ["Parque-Estacion"],
+      dijkstraEdges: []
+    },
+    {
+      badge: "Algoritmo 2: Dijkstra (Menos Metros)",
+      badgeClass: "dijkstra",
+      title: "Dijkstra — Paso 1: Inicialización de distancias",
+      body: `
+        <p><strong>Dijkstra</strong> busca minimizar la suma de metros. Inicia con distancia <strong>0 m</strong> en <strong>Parque</strong> e infinito (<strong>∞</strong>) en los demás vértices.</p>
+        <p>Al evaluar los vecinos de <strong>Parque</strong>, actualiza sus distancias tentativas:</p>
+        <div class="state-box dijkstra">
+          <strong>Pendientes prioritarios:</strong><br>
+          • Iglesia: 180 m (vía Parque)<br>
+          • Mercado: 220 m (vía Parque)<br>
+          • Estación: 950 m (vía Avenida Larga — muy costosa)
+        </div>
+      `,
+      visited: ["Parque"],
+      current: ["Parque"],
+      dijkstraWin: [],
+      bfsEdges: [],
+      dijkstraEdges: ["Parque-Iglesia", "Parque-Mercado"]
+    },
+    {
+      badge: "Algoritmo 2: Dijkstra (Menos Metros)",
+      badgeClass: "dijkstra",
+      title: "Dijkstra — Paso 2: Avance por el corredor Norte",
+      body: `
+        <p>Dijkstra siempre extrae el nodo pendiente con menor distancia acumulada:</p>
+        <ul style="margin-left: 20px; margin-bottom: 10px;">
+          <li>Extrae <strong>Iglesia (180 m)</strong> → descubre <strong>Colegio</strong> en 180 + 160 = <strong>340 m</strong>.</li>
+          <li>Extrae <strong>Mercado (220 m)</strong> → descubre <strong>Cancha</strong> en 220 + 280 = <strong>500 m</strong>.</li>
+          <li>Extrae <strong>Colegio (340 m)</strong> → descubre <strong>Hospital</strong> en 340 + 150 = <strong>490 m</strong>.</li>
+        </ul>
+        <div class="state-box dijkstra">
+          <strong>Menor pendiente actual:</strong> Hospital (490 m)<br>
+          <strong>Estación sigue en:</strong> 950 m (pendiente de relajación)
+        </div>
+      `,
+      visited: ["Parque", "Iglesia", "Mercado", "Colegio", "Hospital", "Cancha"],
+      current: ["Hospital"],
+      dijkstraWin: [],
+      bfsEdges: [],
+      dijkstraEdges: ["Parque-Iglesia", "Iglesia-Colegio", "Colegio-Hospital"]
+    },
+    {
+      badge: "Algoritmo 2: Dijkstra (Menos Metros)",
+      badgeClass: "dijkstra",
+      title: "Dijkstra — Paso 3: Relajación final en Estación",
+      body: `
+        <p>Al extraer <strong>Hospital (490 m)</strong>, evaluamos su conexión hacia <strong>Estación (170 m)</strong>:</p>
+        <p><strong>490 m + 170 m = 660 m</strong>. Como <strong>660 m &lt; 950 m</strong>, Dijkstra descarta <em>La Avenida Larga</em> y actualiza la mejor ruta hacia el destino.</p>
+        <div class="state-box dijkstra">
+          <strong>Distancia óptima confirmada a Estación:</strong> 660 metros<br>
+          <strong>Secuencia óptima:</strong> Parque → Iglesia → Colegio → Hospital → Estación
+        </div>
+      `,
+      visited: ["Parque", "Iglesia", "Colegio", "Hospital", "Estación"],
+      current: [],
+      dijkstraWin: ["Parque", "Iglesia", "Colegio", "Hospital", "Estación"],
+      bfsEdges: [],
+      dijkstraEdges: ["Parque-Iglesia", "Iglesia-Colegio", "Colegio-Hospital", "Hospital-Estacion"]
+    },
+    {
+      badge: "Respuesta y Conclusión",
+      badgeClass: "",
+      title: "Comparación Final: BFS vs. Dijkstra",
+      body: `
+        <p>Ambos algoritmos entregan <strong>secuencias de vértices distintas</strong> porque optimizan criterios diferentes:</p>
+        <div class="comparison-grid">
+          <div class="result-card bfs">
+            <strong style="color: var(--bfs-color);">Ruta BFS (Menos Calles)</strong>
+            <p style="margin-top:6px; font-size:0.88rem;"><strong>Camino:</strong><br>Parque → Estación</p>
+            <p style="font-size:0.88rem;"><strong>Costo:</strong> 1 calle (950 metros)</p>
+            <p style="font-size:0.82rem; color: var(--muted);">Usa La Avenida Larga porque solo cuenta cantidad de tramos.</p>
+          </div>
+          <div class="result-card dijkstra">
+            <strong style="color: var(--dijkstra-color);">Ruta Dijkstra (Menos Metros)</strong>
+            <p style="margin-top:6px; font-size:0.88rem;"><strong>Camino:</strong><br>Parque → Iglesia → Colegio → Hospital → Estación</p>
+            <p style="font-size:0.88rem;"><strong>Costo:</strong> 660 metros (4 calles)</p>
+            <p style="font-size:0.82rem; color: var(--muted);">Ahorra 290 metros caminando por las calles internas.</p>
+          </div>
+        </div>
+      `,
+      visited: [],
+      current: [],
+      dijkstraWin: ["Parque", "Iglesia", "Colegio", "Hospital", "Estación"],
+      bfsEdges: ["Parque-Estacion"],
+      dijkstraEdges: ["Parque-Iglesia", "Iglesia-Colegio", "Colegio-Hospital", "Hospital-Estacion"]
+    }
+  ];
+
+  let currentIndex = 0;
+  let playTimer = null;
+
+  const slider = document.getElementById("slide-slider");
+  slider.max = slides.length - 1;
+
+  function renderSlide(index) {
+    const slide = slides[index];
+    const badgeEl = document.getElementById("slide-badge");
+    badgeEl.textContent = slide.badge;
+    badgeEl.className = "badge " + (slide.badgeClass || "");
+
+    document.getElementById("slide-title").textContent = slide.title;
+    document.getElementById("slide-body").innerHTML = slide.body;
+
+    // Limpiar estilos del grafo
+    document.querySelectorAll(".node").forEach(n => {
+      n.classList.remove("visited", "current", "dijkstra-win");
+    });
+    document.querySelectorAll(".edge").forEach(e => {
+      e.classList.remove("bfs-active", "dijkstra-active");
+    });
+
+    // Aplicar nodos activos
+    slide.visited.forEach(name => {
+      const el = document.getElementById("node-" + name);
+      if (el) el.classList.add("visited");
+    });
+    slide.current.forEach(name => {
+      const el = document.getElementById("node-" + name);
+      if (el) el.classList.add("current");
+    });
+    slide.dijkstraWin.forEach(name => {
+      const el = document.getElementById("node-" + name);
+      if (el) el.classList.add("dijkstra-win");
+    });
+
+    // Aplicar aristas activas
+    slide.bfsEdges.forEach(edgeName => {
+      const el = document.getElementById("edge-" + edgeName);
+      if (el) el.classList.add("bfs-active");
+    });
+    slide.dijkstraEdges.forEach(edgeName => {
+      const el = document.getElementById("edge-" + edgeName);
+      if (el) el.classList.add("dijkstra-active");
+    });
+
+    // Actualizar controles
+    slider.value = index;
+    document.getElementById("step-counter").textContent = `${index + 1} / ${slides.length}`;
+    document.getElementById("btn-prev").disabled = index === 0;
+    document.getElementById("btn-next").disabled = index === slides.length - 1;
+  }
+
+  function nextSlide() {
+    if (currentIndex < slides.length - 1) {
+      currentIndex++;
+      renderSlide(currentIndex);
+    } else {
+      stopPlay();
+    }
+  }
+
+  function prevSlide() {
+    if (currentIndex > 0) {
+      currentIndex--;
+      renderSlide(currentIndex);
+    }
+  }
+
+  function goToSlide(index) {
+    currentIndex = index;
+    renderSlide(currentIndex);
+  }
+
+  function stopPlay() {
+    if (playTimer) {
+      clearInterval(playTimer);
+      playTimer = null;
+      document.getElementById("btn-play").textContent = "▶ Reproducir";
+    }
+  }
+
+  function togglePlay() {
+    if (playTimer) {
+      stopPlay();
+    } else {
+      if (currentIndex === slides.length - 1) {
+        currentIndex = 0;
+        renderSlide(currentIndex);
+      }
+      document.getElementById("btn-play").textContent = "⏸ Pausar";
+      playTimer = setInterval(nextSlide, 3500);
+    }
+  }
+
+  // Navegación con flechas del teclado
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowRight") nextSlide();
+    if (e.key === "ArrowLeft") prevSlide();
+  });
+
+  // Inicializar primera diapositiva
+  renderSlide(0);
+</script>
+
+</body>
+</html>
